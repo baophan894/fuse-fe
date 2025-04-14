@@ -18,7 +18,7 @@ const notification = {
     const { message, description, type = "info", placement = "topRight", duration = 4500 } = options
 
     return toast({
-      title: message,
+      title: typeof message === "string" ? message : String(message),
       description: description,
       variant: type === "error" ? "destructive" : type === "success" ? "success" : "default",
       duration: duration,
