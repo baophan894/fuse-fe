@@ -18,7 +18,7 @@ export const navItems: NavItem[] = [
   {
     title: 'Quản lý bảo hiểm',
     url: '/dashboard/insurance',
-    icon: 'user',
+    icon: 'billing',
     isActive: false,
     items: []
   },
