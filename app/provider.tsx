@@ -22,7 +22,7 @@ export function Providers({ children, themeProps }: ProvidersProps) {
       <NextThemesProvider {...themeProps}>
         <AppProgressBar
           shallowRouting
-          color="#13D0B4"
+          color="#c61b20"
           height="4px"
           options={{ showSpinner: false }}
         />
