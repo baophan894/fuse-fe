@@ -42,19 +42,19 @@ export const UploadContractModal = ({ open, onClose, selectedRequest }: Props) =
   })
 
   const handleUploadAndSend = async () => {
-    console.log("selectedRequest", selectedRequest)
+   
     if (!file || !selectedRequest?.created_by) return
     setLoading(true)
 
     try {
       // 1. Upload file
       const formData = new FormData()
-      console.log("userId", selectedRequest.created_by.id)
+      
       formData.append("userId", selectedRequest.created_by.id)
       formData.append("file", file)
 
       const uploadRes = await uploadContract({ data: formData }).unwrap()
-      console.log("uploadRes", uploadRes)
+
 
       // 2. Gửi email
       const sendRes = await sendEmail({ contractRequestId: selectedRequest.id }).unwrap()

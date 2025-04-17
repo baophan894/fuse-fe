@@ -35,7 +35,7 @@ export const insuranceAPI = baseApi.injectEndpoints({
     }),
     UploadContract: build.mutation({
       query: ({ data}) => (
-        console.log(data),
+       
         {
         url: endpointInsurance.UPLOAD_CONTRACT,
         method: "POST",

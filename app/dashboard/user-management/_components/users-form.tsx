@@ -54,7 +54,7 @@ export default function EmployeeForm() {
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
+  
   }
 
   return (

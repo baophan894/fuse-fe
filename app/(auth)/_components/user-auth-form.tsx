@@ -46,17 +46,17 @@ export default function UserAuthForm() {
   
       // Lưu token vào localStorage hoặc webStorageClient
       const temp = webStorageClient.setToken(token);
-      console.log('token', token);
+  ;
       // Gọi API lấy thông tin người dùng (sử dụng token đã lưu)
       await getInfo(token);
   
       // Lấy lại thông tin người dùng đã được lưu
       const info = webStorageClient.getUserInfo();
-      console.log('info', info);
+    
       const infoJson = info ? JSON.parse(info) : null;
-      console.log('infoJson', infoJson);
+     
       // Kiểm tra vai trò
-      if (infoJson?.role === 'ADMIN') {
+      if (infoJson?.role === 'admin') {
         toast.success('Signed In Successfully!');
         router.push('/dashboard');
       } else {

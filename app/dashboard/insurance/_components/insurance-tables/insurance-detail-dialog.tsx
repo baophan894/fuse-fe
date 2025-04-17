@@ -78,8 +78,7 @@ export function InsuranceDetailDialog({
     const formId = request.id;
     const email = request.email;
     const contractId = res.data?.data?.id 
-    console.log('contractId:',contractId)// Assuming the response contains the file URL
-    console.log("formId", formId);
+  
     if (formId && email) {
       const sendRes = await sendContract({
         data: {
@@ -88,7 +87,7 @@ export function InsuranceDetailDialog({
           contractId,
         },
       }).unwrap();
-      console.log("Gửi hợp đồng thành công:", sendRes);
+    
       toast.success("Gửi hợp đồng thành công!");
     } else {
       console.warn("Thiếu contractId hoặc email");

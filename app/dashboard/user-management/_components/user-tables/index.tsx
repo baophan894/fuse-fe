@@ -27,7 +27,7 @@ export default function UsersTable({
     setPage,
     setSearchQuery
   } = useUserTableFilters();
-  console.log('data first:', data)
+  
   const flatData = data.flat();
   const filteredData = flatData
     .map((user: User) => ({
@@ -45,7 +45,7 @@ export default function UsersTable({
       );
     });
 
-  console.log("data filteredData:", filteredData);
+
 
   // Export data to CSV
   const exportToCSV = () => {

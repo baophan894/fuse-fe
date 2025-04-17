@@ -24,7 +24,7 @@ export default async function VideoListingPage({}: TVideosListingPage) {
       isFetching
     })
   });
-  console.log(result);
+
 
   return (
     <PageContainer scrollable>

@@ -33,7 +33,7 @@ export const userAPI = baseApi.injectEndpoints({
 
     assignInsurance: build.mutation({
       query: ({ data}) => (
-        console.log(data),
+       
         {
         url: endpointAdmin.ASSIGN_INSURANCE,
         method: "POST",

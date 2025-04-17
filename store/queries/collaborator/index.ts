@@ -35,8 +35,7 @@ export const collaboratorAPI = baseApi.injectEndpoints({
     }),
     UploadContract: build.mutation({
       query: ({ data }) => (
-        console.log(data),
-        console.log("Upload contract data:", data),
+    
         {
         
         url: endpointCollaborator.UPLOAD_CONTRACT,

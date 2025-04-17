@@ -233,7 +233,7 @@ export default function InsuranceRequestList() {
         }
 
         const info = await getInfo(token).unwrap()
-        console.log("User profile:", info)
+      
 
         // Check if parent is NULL
         if (info?.data?.parent_admin === null) {
@@ -297,7 +297,7 @@ export default function InsuranceRequestList() {
         id: admin._id || admin.id,
         name: `${admin.first_name} ${admin.last_name}`.trim(),
       }))
-      console.log("normalized admin:", normalized)
+   
       setSubAdmins(normalized)
     }
   }, [subAdminData, isLoadingSubAdmins])
@@ -305,7 +305,7 @@ export default function InsuranceRequestList() {
   const approveInsurance = async ({ requestId }: { requestId: string }) => {
     try {
       const res = await approve({ id: requestId }).unwrap()
-      console.log("Approve success:", res)
+    
     } catch (err) {
       console.error("Approve failed:", err)
     }
@@ -328,14 +328,13 @@ export default function InsuranceRequestList() {
     }
 
     let items = []
-    console.log('allInsuranceData:'  , allInsuranceData)
-    console.log('adminFormData:'  , adminFormData)
+   
     if (isParentNull && allInsuranceData?.data?.items) {
       items = allInsuranceData.data.items || []
     } else if (!isParentNull && adminFormData?.data?.data) {
       items = adminFormData.data?.data || []
     }
-    console.log('items:', items)
+  
     const normalizedData = items.map((item: any) => {
       const info = item.info_id || {}
       
@@ -379,7 +378,7 @@ export default function InsuranceRequestList() {
       }
     })
 
-    console.log("normalizedData:", normalizedData.data)
+  
     setProcessedData(normalizedData)
     setIsDataReady(true)
   }, [allInsuranceData, isLoadingAllInsurance, adminFormData, isLoadingAdminForm, isParentNull, isLoadingProfile])

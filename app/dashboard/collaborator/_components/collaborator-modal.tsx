@@ -39,7 +39,7 @@ export default function CollaboratorModal({
   });
 
   function onSubmit() {
-    console.log('Submit:', formData);
+  
     onClose(); // Đóng modal sau khi submit
   }
 

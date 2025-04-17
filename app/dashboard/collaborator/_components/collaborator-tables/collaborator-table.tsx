@@ -150,7 +150,7 @@ export default function CollaboratorRequestList() {
     
     },
   )
-  console.log("data", data)
+  ("data", data)
   // Hiển thị dialog chi tiết
   const showDetailDialog = (record: CollaboratorRequest) => {
     setSelectedRequest(record)
@@ -261,7 +261,6 @@ export default function CollaboratorRequestList() {
   // Xử lý duyệt đơn (cho trạng thái IN-PROGRESS)
   const handleApproveApplication = async () => {
     if (!selectedRequest || !selectedRequest.created_by) return
-    console.log("selectedRequest", selectedRequest)
     setApproveLoading(true)
     try {
       // Gọi API duyệt đơn

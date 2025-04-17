@@ -40,10 +40,9 @@ export function ViewContractDialog({ open, onOpenChange, contract, request, load
 
   useEffect(() => {
     if (contract) {
-      console.log("Contract object:", contract)
+
       const fileUrl = contract?.data?.fileUrl || contract?.fileUrl
-      console.log("Contract fileUrl:", fileUrl)
-      console.log("Contract content length:", contract.content ? contract.content.length : 0)
+   
     }
   }, [contract])
 
