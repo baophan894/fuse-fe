@@ -150,7 +150,6 @@ export default function CollaboratorRequestList() {
     
     },
   )
-  ("data", data)
   // Hiển thị dialog chi tiết
   const showDetailDialog = (record: CollaboratorRequest) => {
     setSelectedRequest(record)
