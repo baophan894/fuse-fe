@@ -56,7 +56,7 @@ export default function UserAuthForm() {
       const infoJson = info ? JSON.parse(info) : null;
      
       // Kiểm tra vai trò
-      if (infoJson?.role === 'admin') {
+      if (infoJson?.role === 'ADMIN') {
         toast.success('Signed In Successfully!');
         router.push('/dashboard');
       } else {
