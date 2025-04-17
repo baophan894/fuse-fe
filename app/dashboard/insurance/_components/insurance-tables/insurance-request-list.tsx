@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
-import { ChevronDown, FileText, CheckCircle, XCircle, Loader2 } from "lucide-react"
+import { ChevronDown, FileText, Loader2, UserCheck } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
@@ -19,69 +19,72 @@ import { toast } from "sonner"
 import { InsuranceDetailDialog } from "./insurance-detail-dialog"
 import { RejectDialog } from "./reject-dialog"
 import { ConfirmDialog } from "./confirm-dialog"
-import {
-  useApproveMutation,
-  useGetAllInsuranceQuery,
-
-} from "@/store/queries/insurance"
+import { useApproveMutation, useGetAllInsuranceQuery } from "@/store/queries/insurance"
+import { useAssignInsuranceMutation, useGetAllSubAdminQuery, useGetFormByAdminIdQuery } from "@/store/queries/admin"
+import webStorageClient from "@/utils/webStorageClient"
+import { useGetProfileMutation } from "@/store/queries/auth"
 
 // Define the insurance request interface
 export interface InsuranceRequest {
-  id: string;
-  _id: string;
-  address: string;
-  car_owner_name: string;
-  contract_request_name: string;
-  created_at: string;
-  created_by: string;
-  deleted_at: string | null;
-  deleted_by: string | null;
-  effective_date: string;
-  email: string;
-  engine_number: string;
-  expiration_date: string;
-  frame_number: string;
+  id: string
+  _id: string
+  address: string
+  car_owner_name: string
+  contract_request_name: string
+  created_at: string
+  created_by: string
+  deleted_at: string | null
+  deleted_by: string | null
+  effective_date: string
+  email: string
+  engine_number: string
+  expiration_date: string
+  frame_number: string
 
   info_id: {
-    _id: string;
-    id: string;
-    full_name: string;
-    insurance_company: string;
-    insurance_term: string;
-    price: number;
-    seating_capacity: string;
-    usage_purpose: string;
-    vehicle_type: string;
-    driving_training_vehicle: boolean;
-    status: string;
-    created_at: string;
-    updated_at: string;
-    created_by: string;
-    update_by: string | null;
-    deleted_at: string | null;
-    deleted_by: string | null;
-    effective_date: string;
-    expiration_date: string;
-    isActive: boolean;
-    __v: number;
-  };
+    _id: string
+    id: string
+    full_name: string
+    insurance_company: string
+    insurance_term: string
+    price: number
+    seating_capacity: string
+    usage_purpose: string
+    vehicle_type: string
+    driving_training_vehicle: boolean
+    status: string
+    created_at: string
+    updated_at: string
+    created_by: string
+    update_by: string | null
+    deleted_at: string | null
+    deleted_by: string | null
+    effective_date: string
+    expiration_date: string
+    isActive: boolean
+    __v: number
+  }
 
-  insurance_amount: number;
-  invoice_request: boolean;
-  isActive: boolean;
-  licensePlate: string;
-  phone_number: string;
-  province: string;
-  rejection_reason: string;
-  status: string;
-  unregistered_vehicle: boolean;
-  update_by: string | null;
-  updated_at: string;
-  vehicle_model: string;
-  vehicle_number: string;
-  vehicle_type: string;
-  year_of_manufacture: string;
-  __v: number;
+  insurance_amount: number
+  invoice_request: boolean
+  isActive: boolean
+  licensePlate: string
+  phone_number: string
+  province: string
+  rejection_reason: string
+  status: string
+  unregistered_vehicle: boolean
+  update_by: string | null
+  updated_at: string
+  vehicle_model: string
+  vehicle_number: string
+  vehicle_type: string
+  year_of_manufacture: string
+  __v: number
+  assigned_admin?: {
+    first_name: string
+    last_name: string
+  }
 }
 
 // Danh sách lý do từ chối
@@ -180,14 +183,18 @@ const mockInsuranceRequests: InsuranceRequest[] = [
       effective_date: "2026-01-01T00:00:00.000Z",
       expiration_date: "2027-01-01T00:00:00.000Z",
       isActive: true,
-      __v: 0
-    }
-  }
-];
+      __v: 0,
+    },
+  },
+]
 
-// Removed duplicate declaration of getStatusBadge
-
-
+// Update the mockSubadmins array to use the fixed ID
+const mockSubadmins = [
+  { id: "67fdd5573d8517df1e8891f6", name: "Nguyễn Minh Thắng" },
+  { id: "67fdd5573d8517df1e8891f6", name: "Nguyễn Nhật Anh" },
+  { id: "67fdd5573d8517df1e8891f6", name: "Phan Quốc Thái Bảo" },
+  { id: "67fdd5573d8517df1e8891f6", name: "Bảo Phan" },
+]
 
 export default function InsuranceRequestList() {
   // State cho dữ liệu và UI
@@ -202,91 +209,181 @@ export default function InsuranceRequestList() {
   const [isApproving, setIsApproving] = useState(false)
   const [isRejecting, setIsRejecting] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
+  const [getInfo] = useGetProfileMutation()
 
   // Add state to track if data is ready
   const [isDataReady, setIsDataReady] = useState(false)
   const [processedData, setProcessedData] = useState<InsuranceRequest[]>([])
+  const [isParentNull, setIsParentNull] = useState(true)
+  const [adminId, setAdminId] = useState<string | null>(null)
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true)
 
+  // Add this state for tracking assignment process after the other state declarations
+  const [isAssigning, setIsAssigning] = useState(false)
+
+  // Fetch user profile on component mount
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        setIsLoadingProfile(true)
+        const token = webStorageClient.getToken()
+        if (!token) {
+          toast.error("Không tìm thấy token đăng nhập")
+          return
+        }
+
+        const info = await getInfo(token).unwrap()
+        console.log("User profile:", info)
+
+        // Check if parent is NULL
+        if (info?.data?.parent_admin === null) {
+          setIsParentNull(true)
+        } else {
+          setIsParentNull(false)
+          setAdminId(info?.data?.id || info?.data?.id || null)
+        }
+      } catch (error) {
+        console.error("Failed to fetch user profile:", error)
+        toast.error("Không thể lấy thông tin người dùng")
+      } finally {
+        setIsLoadingProfile(false)
+      }
+    }
+
+    fetchUserProfile()
+  }, [])
+
+  // Conditionally fetch data based on parent status
+  const {
+    data: allInsuranceData,
+    isLoading: isLoadingAllInsurance,
+    isError: isAllInsuranceError,
+    refetch: refetchAllInsurance,
+  } = useGetAllInsuranceQuery(
+    {
+      pageNumber: currentPage,
+      pageSize: Number.parseInt(rowsPerPage),
+    },
+    {
+      skip: !isParentNull || isLoadingProfile,
+    },
+  )
+
+  const {
+    data: adminFormData,
+    isLoading: isLoadingAdminForm,
+    isError: isAdminFormError,
+    refetch: refetchAdminForm,
+  } = useGetFormByAdminIdQuery(
+    {
+      AdminId: adminId || "",
+    },
+    {
+      skip: isParentNull || !adminId || isLoadingProfile,
+    },
+  )
+ 
   // RTK Query hooks
-  const { data, isLoading, isError, refetch } = useGetAllInsuranceQuery({
-    pageNumber: currentPage,
-    pageSize: Number.parseInt(rowsPerPage),
-  })
-  const [approve] = useApproveMutation();
+  const [approve] = useApproveMutation()
+  const [assignInsurance] = useAssignInsuranceMutation()
+
+  const { data: subAdminData, isLoading: isLoadingSubAdmins } = useGetAllSubAdminQuery()
+  const [subAdmins, setSubAdmins] = useState<{ id: string; name: string }[]>([])
+  useEffect(() => {
+    if (isLoadingSubAdmins) return
+
+    if (subAdminData?.data) {
+      const normalized = subAdminData.data.map((admin: any) => ({
+        id: admin._id || admin.id,
+        name: `${admin.first_name} ${admin.last_name}`.trim(),
+      }))
+      console.log("normalized admin:", normalized)
+      setSubAdmins(normalized)
+    }
+  }, [subAdminData, isLoadingSubAdmins])
+
   const approveInsurance = async ({ requestId }: { requestId: string }) => {
     try {
-      const res = await approve({ id: requestId }).unwrap();
-      console.log("Approve success:", res);
+      const res = await approve({ id: requestId }).unwrap()
+      console.log("Approve success:", res)
     } catch (err) {
-      console.error("Approve failed:", err);
+      console.error("Approve failed:", err)
     }
-  };
-
+  }
 
   // Process data when it becomes available
   useEffect(() => {
-    if (isLoading) {
-      setIsDataReady(false);
-      return;
+    if (isLoadingProfile) {
+      return
     }
-  
-    if (data && data.data && data.data.items) {
-      const items = data.data.items || [];
-  
-      const normalizedData = items.map((item: any) => {
-        const info = item.info_id || {};
-  
-        return {
-          id: item._id || item.id || "",
-          _id: item._id || item.id || "",
-  
-          contract_request_name: item.contract_request_name || "N/A",
-          car_owner_name: item.car_owner_name || "",
-          email: item.email || "",
-          phone_number: item.phone_number || "",
-          address: item.address || "",
-          province: item.province || "",
-          licensePlate: item.licensePlate || item.vehicle_number || "",
-          vehicle_number: item.vehicle_number || item.licensePlate || "",
-          vehicle_model: item.vehicle_model || "",
-          vehicle_type: info.vehicle_type || item.vehicle_type || "",
-          year_of_manufacture: item.year_of_manufacture || "",
-          frame_number: item.frame_number || "",
-          engine_number: item.engine_number || "",
-  
-          insurance_amount: item.insurance_amount || info.price || 0,
-          insuranceType: info.insurance_company || "",
-          insuranceTerm: info.insurance_term || "",
-          effective_date: item.effective_date || info.effective_date || "",
-          expiration_date: item.expiration_date || info.expiration_date || "",
-  
-          invoice_request: item.invoice_request || false,
-          rejection_reason: item.rejection_reason || "",
-          status: item.status || "pending",
-          isActive: item.isActive || false,
-          unregistered_vehicle: item.unregistered_vehicle || false,
-          driving_training_vehicle: info.driving_training_vehicle || false,
-          usage_purpose: info.usage_purpose || "",
-          seating_capacity: info.seating_capacity || "",
-  
-          created_at: item.created_at || "",
-          updated_at: item.updated_at || "",
-          created_by: item.created_by || "",
-          updated_by: item.updated_by || "",
-          deleted_at: item.deleted_at || "",
-          deleted_by: item.deleted_by || "",
-  
-          ...item, // giữ nguyên thông tin gốc
-        };
-      });
-      console.log("normalizedData:", normalizedData)
-      setProcessedData(normalizedData);
-      console.log("Process Data:", processedData)
-      setIsDataReady(true);
+
+    if (isParentNull && isLoadingAllInsurance) {
+      setIsDataReady(false)
+      return
     }
-  }, [data, isLoading]);
-  
-  
+
+    if (!isParentNull && isLoadingAdminForm) {
+      setIsDataReady(false)
+      return
+    }
+
+    let items = []
+    console.log('allInsuranceData:'  , allInsuranceData)
+    console.log('adminFormData:'  , adminFormData)
+    if (isParentNull && allInsuranceData?.data?.items) {
+      items = allInsuranceData.data.items || []
+    } else if (!isParentNull && adminFormData?.data?.data) {
+      items = adminFormData.data?.data || []
+    }
+    console.log('items:', items)
+    const normalizedData = items.map((item: any) => {
+      const info = item.info_id || {}
+      
+      return {
+        id: item._id || item.id || "",
+        _id: item._id || item.id || "",
+
+        contract_request_name: item.contract_request_name || "N/A",
+        car_owner_name: item.car_owner_name || "",
+        email: item.email || "",
+        phone_number: item.phone_number || "",
+        address: item.address || "",
+        province: item.province || "",
+        licensePlate: item.licensePlate || item.vehicle_number || "",
+        vehicle_number: item.vehicle_number || item.licensePlate || "",
+        vehicle_model: item.vehicle_model || "",
+        vehicle_type: info.vehicle_type || item.vehicle_type || "",
+        year_of_manufacture: item.year_of_manufacture || "",
+        frame_number: item.frame_number || "",
+        engine_number: item.engine_number || "",
+
+        insurance_amount: item.insurance_amount || info.price || 0,
+        insuranceType: info.insurance_company || "",
+        insuranceTerm: info.insurance_term || "",
+        effective_date: item.effective_date || info.effective_date || "",
+        expiration_date: item.expiration_date || info.expiration_date || "",
+
+        invoice_request: item.invoice_request || false,
+        rejection_reason: item.rejection_reason || "",
+        status: item.status || "pending",
+        isActive: item.isActive || false,
+        unregistered_vehicle: item.unregistered_vehicle || false,
+        driving_training_vehicle: info.driving_training_vehicle || false,
+        usage_purpose: info.usage_purpose || "",
+        seating_capacity: info.seating_capacity || "",
+
+        created_at: item.created_at || "",
+        assigned_admin: item.assigned_admin || "",
+
+        ...item, // giữ nguyên thông tin gốc
+      }
+    })
+
+    console.log("normalizedData:", normalizedData.data)
+    setProcessedData(normalizedData)
+    setIsDataReady(true)
+  }, [allInsuranceData, isLoadingAllInsurance, adminFormData, isLoadingAdminForm, isParentNull, isLoadingProfile])
+
   // Hiển thị dialog chi tiết
   const showDetailDialog = (record: InsuranceRequest) => {
     setSelectedRequest(record)
@@ -311,13 +408,37 @@ export default function InsuranceRequestList() {
     setConfirmDialogOpen(true)
   }
 
+  // Update the handleAssignToAdmin function to use the API
+  const handleAssignToAdmin = async (adminId: string, requestId: string) => {
+    setIsAssigning(true)
+    try {
+      await assignInsurance({
+        data: {
+          adminId: adminId,
+          formId: requestId,
+        },
+      }).unwrap()
+
+      // Show success message
+      toast.success("Đã phân công công việc thành công")
+
+      // Refresh data
+      handleRefetch()
+    } catch (error) {
+      console.error("Failed to assign request:", error)
+      toast.error("Phân công thất bại. Vui lòng thử lại sau.")
+    } finally {
+      setIsAssigning(false)
+    }
+  }
+
   // Xử lý duyệt đơn
   const handleApproveApplication = async () => {
     if (!selectedRequest) return
 
     try {
       await approveInsurance({
-        requestId: selectedRequest.id ,
+        requestId: selectedRequest.id,
       })
 
       // Show success message
@@ -330,7 +451,7 @@ export default function InsuranceRequestList() {
       setDetailDialogOpen(false)
 
       // Refresh data
-      refetch()
+      handleRefetch()
     } catch (error) {
       console.error("Failed to approve request:", error)
       toast.error("Duyệt đơn thất bại. Vui lòng thử lại sau.")
@@ -354,7 +475,7 @@ export default function InsuranceRequestList() {
       setDetailDialogOpen(false)
 
       // Refresh data
-      refetch()
+      handleRefetch()
     } catch (error) {
       console.error("Failed to reject request:", error)
       toast.error("Từ chối đơn thất bại. Vui lòng thử lại sau.")
@@ -363,11 +484,23 @@ export default function InsuranceRequestList() {
     }
   }
 
-  // Get metadata from API response
-  const totalPages = data?.data?.meta?.totalPages || data?.data?.totalPages || 1
-  const totalItems = data?.data?.meta?.totalItems || data?.data?.totalItemCount || processedData.length
+  // Helper function to refresh data based on parent status
+  const handleRefetch = () => {
+    if (isParentNull) {
+      refetchAllInsurance()
+    } else {
+      refetchAdminForm()
+    }
+  }
 
-  
+  // Get metadata from API response
+  const totalPages = isParentNull
+    ? allInsuranceData?.data?.meta?.totalPages || allInsuranceData?.data?.totalPages || 1
+    : adminFormData?.data?.meta?.totalPages || adminFormData?.data?.totalPages || 1
+
+  const totalItems = isParentNull
+    ? allInsuranceData?.data?.meta?.totalItems || allInsuranceData?.data?.totalItemCount || processedData.length
+    : adminFormData?.data?.meta?.totalItems || adminFormData?.data?.totalItemCount || processedData.length
 
   // Handle page change
   const handlePageChange = (page: number) => {
@@ -381,7 +514,19 @@ export default function InsuranceRequestList() {
   }, [searchQuery, activeStatus, rowsPerPage])
 
   // Show loading state if data is not ready yet
-  if (isLoading || !isDataReady) {
+  if (isLoadingProfile) {
+    return (
+      <div className="flex flex-col justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+        <div className="text-center">
+          <div className="font-medium">Đang tải thông tin người dùng...</div>
+          <div className="text-sm text-muted-foreground mt-1">Vui lòng đợi trong giây lát</div>
+        </div>
+      </div>
+    )
+  }
+
+  if ((isParentNull && isLoadingAllInsurance) || (!isParentNull && isLoadingAdminForm) || !isDataReady) {
     return (
       <div className="flex flex-col justify-center items-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
@@ -393,11 +538,11 @@ export default function InsuranceRequestList() {
     )
   }
 
-  if (isError) {
+  if ((isParentNull && isAllInsuranceError) || (!isParentNull && isAdminFormError)) {
     return (
       <div className="flex flex-col justify-center items-center h-64">
         <div className="text-red-500 mb-4">Đã xảy ra lỗi khi tải dữ liệu</div>
-        <Button onClick={() => refetch()}>Thử lại</Button>
+        <Button onClick={() => handleRefetch()}>Thử lại</Button>
       </div>
     )
   }
@@ -446,7 +591,9 @@ export default function InsuranceRequestList() {
               <TableHead>Số điện thoại</TableHead>
               <TableHead>Ngày tạo</TableHead>
               <TableHead>Trạng thái</TableHead>
-              <TableHead className="text-right">Thao tác</TableHead>
+              {/* Modify the action buttons in the table row to include the assign button */}
+              {/* Find the line with <div className="flex justify-end gap-2"> and replace the entire cell with: */}
+              <TableHead className="text-center">Thao tác</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody className="bg-white">
@@ -466,46 +613,45 @@ export default function InsuranceRequestList() {
                   <TableCell className="font-medium">{item.contract_request_name}</TableCell>
                   <TableCell>{item.email}</TableCell>
                   <TableCell>{item.phone_number}</TableCell>
-                  
+
                   <TableCell>{formatDateVN(item.created_at || "")}</TableCell>
                   <TableCell>{getStatusBadge(item.status)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={`h-8 flex items-center w-[200px] ${
+                              item.assigned_admin
+                                ? "bg-red-50 text-red-700 border-red-200 hover:bg-red-100 hover:text-red-800"
+                                : ""
+                            }`}
+                          >
+                            <UserCheck className={`h-4 w-4 mr-1.5 ${item.assigned_admin ? "text-red-600" : ""}`} />
+                            {item.assigned_admin
+                              ? `${item.assigned_admin.first_name || ""} ${item.assigned_admin.last_name || ""}`
+                              : "Phân công"}
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-[200px] p-1">
+                          {subAdmins?.map((admin) => (
+                            <DropdownMenuRadioItem
+                              key={admin.id}
+                              value={admin.id}
+                              onClick={() => handleAssignToAdmin(admin.id, item.id || item._id || "")}
+                              className="cursor-pointer py-1.5"
+                            >
+                              {admin.name}
+                            </DropdownMenuRadioItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+
                       <Button variant="outline" size="sm" onClick={() => showDetailDialog(item)} className="h-8">
                         Chi tiết
                       </Button>
-                      {(item.status === "PENDING" || !item.status) && (
-                        <>
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => openConfirmApproveDialog(item)}
-                            className="h-8 bg-green-600 hover:bg-green-700"
-                            disabled={isApproving}
-                          >
-                            {isApproving ? (
-                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                            ) : (
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                            )}
-                            Duyệt
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => openRejectDialog(item)}
-                            className="h-8"
-                            disabled={isRejecting}
-                          >
-                            {isRejecting ? (
-                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                            ) : (
-                              <XCircle className="h-4 w-4 mr-1" />
-                            )}
-                            Từ chối
-                          </Button>
-                        </>
-                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -666,8 +812,6 @@ export default function InsuranceRequestList() {
   )
 }
 
-
 function rejectInsurance(arg0: { requestId: string; data: { reason: string; details?: string } }) {
-    throw new Error("Function not implemented.")
+  throw new Error("Function not implemented.")
 }
-

@@ -11,8 +11,9 @@ type TUsersListingPage = {}
 export default function UsersListingPage({}: TUsersListingPage) {
   // Lấy tổng số người dùng để hiển thị trong tiêu đề
   const { data } = useGetAllUsersQuery({ pageNumber: 1, pageSize: 10 })
-  const total = data?.data[0]?.data?.totalItemCount || 0
-  console.log("data:",data);
+  console.log('firstData:', data);
+  const total = data?.data?.length || 0
+  console.log("data:",total);
   return (
     <PageContainer scrollable>
       <div className="space-y-4">
@@ -20,7 +21,7 @@ export default function UsersListingPage({}: TUsersListingPage) {
           <Heading title={`Quản lý người dùng`} description="Quản lý người dùng từ Zalo" />
         </div>
         <Separator />
-        <UsersTable data={[data]} totalData={total} />
+        <UsersTable data={[data?.data]} totalData={total} />
       </div>
     </PageContainer>
   )

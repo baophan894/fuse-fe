@@ -21,7 +21,7 @@ const formSchema = z.object({
   email: z.string().email({ message: 'Enter a valid email address' }),
   password: z
     .string()
-    .min(6, { message: 'Password must be at least 6 characters' })
+    .min(1, { message: 'Password must be at least 6 characters' })
 });
 
 type UserFormValue = z.infer<typeof formSchema>;
@@ -40,21 +40,33 @@ export default function UserAuthForm() {
 
   const handleSignIn = async (data: UserFormValue) => {
     try {
-      await signIn(data).unwrap();
-      await getInfo(null);
+      // Gửi yêu cầu đăng nhập và lấy token
+      const response = await signIn(data).unwrap();
+      const token = response.data.token;
+  
+      // Lưu token vào localStorage hoặc webStorageClient
+      const temp = webStorageClient.setToken(token);
+      console.log('token', token);
+      // Gọi API lấy thông tin người dùng (sử dụng token đã lưu)
+      await getInfo(token);
+  
+      // Lấy lại thông tin người dùng đã được lưu
       const info = webStorageClient.getUserInfo();
+      console.log('info', info);
       const infoJson = info ? JSON.parse(info) : null;
-      if (infoJson?.role === 'admin') {
-        await toast.success('Signed In Successfully!');
+      console.log('infoJson', infoJson);
+      // Kiểm tra vai trò
+      if (infoJson?.role === 'ADMIN') {
+        toast.success('Signed In Successfully!');
         router.push('/dashboard');
       } else {
-        await toast.error('Unauthorized Access');
+        toast.error('Unauthorized Access');
       }
     } catch (error: any) {
       toast.error('Sign In Failed!');
     }
   };
-
+  
   return (
     <>
       <Form {...form}>

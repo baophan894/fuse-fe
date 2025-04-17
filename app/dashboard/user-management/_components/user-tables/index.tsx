@@ -27,29 +27,25 @@ export default function UsersTable({
     setPage,
     setSearchQuery
   } = useUserTableFilters();
-  console.log('data filter:',data)
-  const filteredData = data[0]?.data?.items
-  .map((user: User) => ({
-    ...user,
-    fullName: `${user?.first_name} ${user?.last_name}`.trim() // Ghép fullName
-  }))
-  .filter((user: User) => {
-    // Chuyển đổi searchQuery thành chữ thường
-    const searchTerms = searchQuery.toLowerCase();
-    console.log("data searchTerms:", searchTerms);
+  console.log('data first:', data)
+  const flatData = data.flat();
+  const filteredData = flatData
+    .map((user: User) => ({
+      ...user,
+      fullName: `${user?.first_name ?? ''} ${user?.last_name ?? ''}`.trim()
+    }))
+    .filter((user: User) => {
+      const searchTerms = searchQuery.toLowerCase();
+      if (!searchTerms) return true;
 
-    let matchesSearch = true;
-    if (searchTerms !== "") {
-      matchesSearch =
-        user?.fullName?.toLowerCase().includes(searchTerms) ||
-        user?.email?.toLowerCase().includes(searchTerms);
-    }
+      return (
+        user.fullName.toLowerCase().includes(searchTerms) ||
+        (user.email?.toLowerCase().includes(searchTerms) ?? false) ||
+        (user.phone_number?.toLowerCase().includes(searchTerms) ?? false)
+      );
+    });
 
-    console.log("data matchesSearch:", matchesSearch);
-    return matchesSearch;
-  });
-
-console.log("data filteredData:", filteredData);
+  console.log("data filteredData:", filteredData);
 
   // Export data to CSV
   const exportToCSV = () => {
@@ -105,7 +101,7 @@ console.log("data filteredData:", filteredData);
           Export to Excel
         </Button>
       </div>
-      <DataTable columns={columns} data={filteredData ?? []}  totalItems={totalData} />
+      <DataTable columns={columns} data={filteredData ?? []} totalItems={totalData} />
     </div>
   );
 }

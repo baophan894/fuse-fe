@@ -3,14 +3,16 @@ import { NavItem } from '@/types';
 export type User = {
   data?: any;
   id: string;
-  avatar_url: string;
   email: string;
   first_name: string;
   last_name: string;
   phone_number: string;
   role: string;
+  isFollowerOA: boolean;
+  created_at: string;
   get fullName(): string;
 };
+
 
 // Tạo một hàm helper để ghép fullName
 export const getFullName = (user: User): string => {

@@ -13,7 +13,12 @@ import { CollaboratorDetailDialog } from "./collaborator-detail-dialog"
 import { RejectDialog } from "./reject-dialog"
 import { ConfirmDialog } from "./confirm-dialog"
 import { ViewContractDialog } from "./view-contract-dialog"
-import { useApproveRequestMutation, useGetAllCollaboratorsQuery, useRejectRequestMutation, useUpdateRoleMutation } from "@/store/queries/collaborator"
+import {
+  useApproveRequestMutation,
+  useGetAllCollaboratorsQuery,
+  useRejectRequestMutation,
+  useUpdateRoleMutation,
+} from "@/store/queries/collaborator"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
@@ -27,6 +32,7 @@ import { ContractUploadDialog } from "./contract-upload-dialog"
 import { toast } from "sonner"
 
 export interface CollaboratorRequest {
+  _id: any
   id: string
   full_name: string
   dob: string
@@ -60,7 +66,7 @@ interface ApiResponse {
 
 // Định nghĩa kiểu dữ liệu cho hợp đồng
 export interface Contract {
-  data: any;
+  data: any
   id: string
   content: string
   status: string
@@ -133,11 +139,18 @@ export default function CollaboratorRequestList() {
   const [rowsPerPage, setRowsPerPage] = useState("10")
   const { notification } = useNotification()
 
-  const { data, isLoading, isError } = useGetAllCollaboratorsQuery({
-    pageNumber: 1,
-    pageSize: Number.parseInt(rowsPerPage),
-  })
-  console.log('data', data)
+  const { data, isLoading, isError, refetch } = useGetAllCollaboratorsQuery(
+    {
+      pageNumber: 1,
+      pageSize: Number.parseInt(rowsPerPage),
+    },
+    {
+      
+      skip: false,
+    
+    },
+  )
+  console.log("data", data)
   // Hiển thị dialog chi tiết
   const showDetailDialog = (record: CollaboratorRequest) => {
     setSelectedRequest(record)
@@ -175,7 +188,6 @@ export default function CollaboratorRequestList() {
     setSelectedRequest(request)
     setUploadContractDialogOpen(true)
   }
-  
 
   // Xử lý gửi hợp đồng (cho trạng thái PENDING)
   const handleSendContract = async () => {
@@ -202,9 +214,15 @@ export default function CollaboratorRequestList() {
         placement: "topRight",
       })
 
+      // Show toast notification
+      toast.success(`Hợp đồng đã được gửi đến ${selectedRequest.full_name}.`)
+
       // Đóng dialog
       setConfirmDialogOpen(false)
       setDetailDialogOpen(false)
+
+      // Refetch data instead of full page reload
+      refetch()
     } catch (error) {
       console.error("Failed to send contract:", error)
       notification.error({
@@ -212,6 +230,7 @@ export default function CollaboratorRequestList() {
         description: "Đã xảy ra lỗi khi gửi hợp đồng. Vui lòng thử lại sau.",
         placement: "topRight",
       })
+      toast.error("Gửi hợp đồng thất bại. Vui lòng thử lại sau.")
     } finally {
       setSendContractLoading(false)
     }
@@ -219,33 +238,41 @@ export default function CollaboratorRequestList() {
 
   const [approveRequest] = useApproveRequestMutation()
   const [updateUserRole] = useUpdateRoleMutation()
-    // Xử lý sau khi upload hợp đồng thành công
-    const handleUploadSuccess = () => {
-      // Refresh data or update UI
-      // refreshData()f
-      notification.success({
-        message: "Tải lên hợp đồng thành công",
-        description: "Hợp đồng đã được tải lên thành công.",
-        placement: "topRight",
-      })
-    }
+  // Xử lý sau khi upload hợp đồng thành công
+  const handleUploadSuccess = () => {
+    // Show success notification
+    notification.success({
+      message: "Tải lên hợp đồng thành công",
+      description: "Hợp đồng đã được tải lên thành công.",
+      placement: "topRight",
+    })
+
+    // Show toast notification
+    toast.success("Hợp đồng đã được tải lên thành công.")
+
+    // Close any open dialogs
+    setUploadContractDialogOpen(false)
+    setDetailDialogOpen(false)
+
+    // Refetch data instead of full page reload
+    refetch()
+  }
 
   // Xử lý duyệt đơn (cho trạng thái IN-PROGRESS)
   const handleApproveApplication = async () => {
     if (!selectedRequest || !selectedRequest.created_by) return
-    console.log('selectedRequest', selectedRequest)
+    console.log("selectedRequest", selectedRequest)
     setApproveLoading(true)
     try {
       // Gọi API duyệt đơn
       const approveResponse = await approveRequest({
-        requestId: selectedRequest.id
+        contractRequestId: selectedRequest._id,
       })
 
       // Cập nhật vai trò người dùng thành collaborator
       const updateRoleResponse = await updateUserRole({
-        userId: selectedRequest.created_by.id},)
-
-
+        userId: selectedRequest.created_by.id,
+      })
 
       // Hiển thị thông báo thành công
       notification.success({
@@ -254,9 +281,15 @@ export default function CollaboratorRequestList() {
         placement: "topRight",
       })
 
+      // Show toast notification
+      toast.success(`Đơn đăng ký của ${selectedRequest.full_name} đã được duyệt thành công.`)
+
       // Đóng dialog
       setConfirmDialogOpen(false)
       setDetailDialogOpen(false)
+
+      // Refetch data instead of full page reload
+      refetch()
     } catch (error) {
       console.error("Failed to approve request:", error)
       notification.error({
@@ -264,6 +297,7 @@ export default function CollaboratorRequestList() {
         description: "Đã xảy ra lỗi khi duyệt đơn đăng ký. Vui lòng thử lại sau.",
         placement: "topRight",
       })
+      toast.error("Duyệt đơn thất bại. Vui lòng thử lại sau.")
     } finally {
       setApproveLoading(false)
     }
@@ -321,9 +355,9 @@ export default function CollaboratorRequestList() {
 
     setRejectLoading(true)
     try {
-      const requestId=rejectingRequest.id
-      const data = values;
-      const response = await rejectRequest({ requestId, data }).unwrap();
+      const requestId = rejectingRequest.id
+      const data = values
+      const response = await rejectRequest({ requestId, data }).unwrap()
       // Hiển thị thông báo thành công
       notification.success({
         message: "Từ chối đơn thành công",
@@ -331,9 +365,15 @@ export default function CollaboratorRequestList() {
         placement: "topRight",
       })
 
+      // Show toast notification
+      toast.success(`Đơn đăng ký của ${rejectingRequest.full_name} đã bị từ chối.`)
+
       // Đóng dialog
       setRejectDialogOpen(false)
       setDetailDialogOpen(false)
+
+      // Refetch data instead of full page reload
+      refetch()
     } catch (error) {
       console.error("Failed to reject request:", error)
       notification.error({
@@ -341,6 +381,7 @@ export default function CollaboratorRequestList() {
         description: "Đã xảy ra lỗi khi từ chối đơn đăng ký. Vui lòng thử lại sau.",
         placement: "topRight",
       })
+      toast.error("Từ chối đơn thất bại. Vui lòng thử lại sau.")
     } finally {
       setRejectLoading(false)
       setRejectingRequest(null)
@@ -627,4 +668,3 @@ export default function CollaboratorRequestList() {
     </div>
   )
 }
-

@@ -52,10 +52,10 @@ export const collaboratorAPI = baseApi.injectEndpoints({
       }),
     }),
     ApproveRequest: build.mutation({
-      query: ({ requestId}) => ({
-        url: endpointCollaborator.APPROVE_REQUEST.replace(":id",requestId),
+      query: ({ contractRequestId}) => ({
+        url: endpointCollaborator.APPROVE_REQUEST,
         method: "PATCH",
-   
+        body: {contractRequestId},
       }),
     }),
     UpdateRole: build.mutation({

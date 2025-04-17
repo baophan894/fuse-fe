@@ -38,6 +38,7 @@ export function ContractUploadDialog({ open, onOpenChange, requestId, onSuccess 
   }
 
   const handleUpload = async () => {
+    console.log('upload')
     if (!file || !requestId) return
 
     try {

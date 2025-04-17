@@ -1,40 +1,50 @@
 import { User } from "@/constants/data";
-import { CellContext, ColumnDef } from "@tanstack/react-table";
-import Image from "next/image";
+import { ColumnDef } from "@tanstack/react-table";
+import { format } from "date-fns";
+import { vi } from "date-fns/locale";
 
 export const columns: ColumnDef<User>[] = [
   {
-    accessorKey: "avatar_url",
-    header: "Avatar",
-    cell: ({ getValue }: CellContext<User, unknown>) => {
-      const avatarUrl = getValue() as string;
-      return (
-        <div className="w-10 h-10 rounded-full overflow-hidden">
-          <Image
-            src={avatarUrl || "/default-avatar.png"} // Ảnh mặc định nếu không có avatar
-            alt="Avatar"
-            width={40}
-            height={40}
-            className="w-full h-full object-cover"
-          />
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "email",
-    header: "Email",
-  },
-  {
     accessorKey: "fullName",
     header: "Họ và tên",
+    cell: ({ row }) => {
+      const user = row.original;
+      return `${user.first_name} ${user.last_name}`;
+    }
   },
   {
     accessorKey: "phone_number",
     header: "Số điện thoại",
+    cell: ({ row }) => {
+      const phone = row.original.phone_number;
+      return phone?.replace("+84", "0") ;
+    }
+  },
+  {
+    accessorKey: "created_at",
+    header: "Ngày tạo",
+    cell: ({ row }) => {
+      const date = row.original.created_at;
+      if (!date) return "—";
+    
+      const d = new Date(date);
+      if (isNaN(d.getTime())) return "—";
+    
+      return d.toLocaleDateString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+    }
+    
   },
   {
     accessorKey: "role",
-    header: "Vai trò",
+    header: "Vai trò"
   },
+  {
+    accessorKey: "isFollowerOA",
+    header: "Follow OA",
+    cell: ({ row }) => (row.original.isFollowerOA ? "Có" : "Không")
+  }
 ];

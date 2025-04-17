@@ -1,8 +1,8 @@
 import { UpdateIcon } from "@radix-ui/react-icons";
 
 const endpointAuth = {
-  SIGN_IN: `/auth/login/`,
-  GET_INFO: `/user/profile`
+  SIGN_IN: `/auth/sign-in-with-admin`,
+  GET_INFO: `/users/admin-info`
 };
 
 const endpointUser = {
@@ -10,7 +10,10 @@ const endpointUser = {
 };
 
 const endpointAdmin = {
-  GET_ALL: `/user/get-all`
+  GET_ALL: `/users/find-all-guest`,
+  ASSIGN_INSURANCE: `/application-form/assign-admin`,
+  GET_ALL_SUB_ADMIN: `/users/find-all-admin`,
+  GET_FORM_FOR_ADMIN: `/application-form/get-form-admin/:id`,
 };
 
 const endpointCollaborator = {
