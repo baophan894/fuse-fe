@@ -23,6 +23,7 @@ import { useApproveMutation, useGetAllInsuranceQuery } from "@/store/queries/ins
 import { useAssignInsuranceMutation, useGetAllSubAdminQuery, useGetFormByAdminIdQuery } from "@/store/queries/admin"
 import webStorageClient from "@/utils/webStorageClient"
 import { useGetProfileMutation } from "@/store/queries/auth"
+import { useSendNotificationMutation } from "@/store/queries/notification"
 
 // Define the insurance request interface
 export interface InsuranceRequest {
@@ -406,30 +407,36 @@ export default function InsuranceRequestList() {
     setSelectedRequest(request)
     setConfirmDialogOpen(true)
   }
-
+  const [sendNotification] = useSendNotificationMutation();
   // Update the handleAssignToAdmin function to use the API
   const handleAssignToAdmin = async (adminId: string, requestId: string) => {
-    setIsAssigning(true)
+    setIsAssigning(true);
     try {
       await assignInsurance({
         data: {
           adminId: adminId,
           formId: requestId,
         },
-      }).unwrap()
-
-      // Show success message
-      toast.success("Đã phân công công việc thành công")
-
+      }).unwrap();
+  
+      
+      // 👉 Gửi thông báo tới admin
+      await sendNotification({
+        topic: "notifications",
+        title: "Bạn đã được phân đơn mới",
+        body: "Bạn vừa được phân cho 1 đơn bảo hiểm mới."
+      });
+      toast.success("Đã phân công công việc thành công");
+  
       // Refresh data
-      handleRefetch()
+      handleRefetch();
     } catch (error) {
-      console.error("Failed to assign request:", error)
-      toast.error("Phân công thất bại. Vui lòng thử lại sau.")
+      console.error("Failed to assign request:", error);
+      toast.error("Phân công thất bại. Vui lòng thử lại sau.");
     } finally {
-      setIsAssigning(false)
+      setIsAssigning(false);
     }
-  }
+  };
 
   // Xử lý duyệt đơn
   const handleApproveApplication = async () => {

@@ -33,6 +33,10 @@ const endpointInsurance = {
 
 };
 
+const endpointNotification = {
+  SEND_NOTIFICATION: "/Notification/send-to-topic",
+  SAVE_TOKEN : "/Notification/post"
+}
 
 const endpointVideo = {
   GET_ALL: `/video/admin`
@@ -48,4 +52,4 @@ const endpointFAQs = {
 
 const endpointOther = {};
 
-export { endpointAuth, endpointFAQs, endpointUser, endpointVideo, endpointAdmin, endpointCollaborator,endpointInsurance };
+export { endpointAuth, endpointFAQs, endpointUser, endpointVideo, endpointAdmin, endpointCollaborator,endpointInsurance, endpointOther, endpointNotification };

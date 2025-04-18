@@ -54,7 +54,7 @@ export default function UserAuthForm() {
       const info = webStorageClient.getUserInfo();
     
       const infoJson = info ? JSON.parse(info) : null;
-     
+      console.log('infoJson', infoJson);
       // Kiểm tra vai trò
       if (infoJson?.role === 'ADMIN') {
         toast.success('Signed In Successfully!');
