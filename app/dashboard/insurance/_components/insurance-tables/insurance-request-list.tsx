@@ -23,7 +23,7 @@ import { useApproveMutation, useGetAllInsuranceQuery } from "@/store/queries/ins
 import { useAssignInsuranceMutation, useGetAllSubAdminQuery, useGetFormByAdminIdQuery } from "@/store/queries/admin"
 import webStorageClient from "@/utils/webStorageClient"
 import { useGetProfileMutation } from "@/store/queries/auth"
-import { useSendNotificationMutation } from "@/store/queries/notification"
+import { useSocket } from '@/hooks/useSocket';
 
 // Define the insurance request interface
 export interface InsuranceRequest {
@@ -218,7 +218,7 @@ export default function InsuranceRequestList() {
   const [isParentNull, setIsParentNull] = useState(true)
   const [adminId, setAdminId] = useState<string | null>(null)
   const [isLoadingProfile, setIsLoadingProfile] = useState(true)
-
+  const [id, setId] = useState<string | null>(null)
   // Add this state for tracking assignment process after the other state declarations
   const [isAssigning, setIsAssigning] = useState(false)
 
@@ -235,13 +235,14 @@ export default function InsuranceRequestList() {
 
         const info = await getInfo(token).unwrap()
       
-
+        setId(info?.data?.id || info?.data?.id || null)
         // Check if parent is NULL
         if (info?.data?.parent_admin === null) {
           setIsParentNull(true)
         } else {
           setIsParentNull(false)
           setAdminId(info?.data?.id || info?.data?.id || null)
+          
         }
       } catch (error) {
         console.error("Failed to fetch user profile:", error)
@@ -407,7 +408,7 @@ export default function InsuranceRequestList() {
     setSelectedRequest(request)
     setConfirmDialogOpen(true)
   }
-  const [sendNotification] = useSendNotificationMutation();
+  const socket = useSocket(id || '');
   // Update the handleAssignToAdmin function to use the API
   const handleAssignToAdmin = async (adminId: string, requestId: string) => {
     setIsAssigning(true);
@@ -419,13 +420,13 @@ export default function InsuranceRequestList() {
         },
       }).unwrap();
   
-      
-      // 👉 Gửi thông báo tới admin
-      await sendNotification({
-        topic: "notifications",
+      // 👉 Gửi thông báo qua WebSocket
+      socket?.emit('notifications', {
+        toUserId: adminId,
         title: "Bạn đã được phân đơn mới",
-        body: "Bạn vừa được phân cho 1 đơn bảo hiểm mới."
+        message: "Bạn vừa được phân cho 1 đơn bảo hiểm mới.",
       });
+  
       toast.success("Đã phân công công việc thành công");
   
       // Refresh data
@@ -437,7 +438,6 @@ export default function InsuranceRequestList() {
       setIsAssigning(false);
     }
   };
-
   // Xử lý duyệt đơn
   const handleApproveApplication = async () => {
     if (!selectedRequest) return
