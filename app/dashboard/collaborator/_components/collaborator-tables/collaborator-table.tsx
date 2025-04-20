@@ -275,12 +275,12 @@ export default function CollaboratorRequestList() {
       // Hiển thị thông báo thành công
       notification.success({
         message: "Duyệt đơn thành công",
-        description: `Đơn đăng ký của ${selectedRequest.full_name} đã được duyệt thành công.`,
+        description: `Đơn đăng đã được duyệt thành công.`,
         placement: "topRight",
       })
 
       // Show toast notification
-      toast.success(`Đơn đăng ký của ${selectedRequest.full_name} đã được duyệt thành công.`)
+      toast.success(`Đơn đăng ký đã được duyệt thành công.`)
 
       // Đóng dialog
       setConfirmDialogOpen(false)
@@ -364,7 +364,7 @@ export default function CollaboratorRequestList() {
       })
 
       // Show toast notification
-      toast.success(`Đơn đăng ký của ${rejectingRequest.full_name} đã bị từ chối.`)
+      toast.success(`Đơn đăng ký đã bị từ chối.`)
 
       // Đóng dialog
       setRejectDialogOpen(false)

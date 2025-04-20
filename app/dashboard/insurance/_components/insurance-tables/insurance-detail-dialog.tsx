@@ -43,8 +43,7 @@ export function InsuranceDetailDialog({
   }
 
   const handleConfirm = () => {
-    // The user will implement the API call to change status to IN-PROGRESS
-    // Pass the request ID to the handler
+  
     if (request) {
       onApprove(request)
     }

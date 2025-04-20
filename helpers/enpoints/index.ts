@@ -14,6 +14,7 @@ const endpointAdmin = {
   ASSIGN_INSURANCE: `/application-form/assign-admin`,
   GET_ALL_SUB_ADMIN: `/users/find-all-admin`,
   GET_FORM_FOR_ADMIN: `/application-form/get-form-admin/:id`,
+  CREATE_SUB_ADMIN: `/users/:id`,
 };
 
 const endpointCollaborator = {

@@ -17,6 +17,10 @@ export const useSocket = (userId: string) => {
     socketRef.current.on('connect', () => {
       console.log('✅ Connected to WebSocket');
     });
+    socketRef.current.on("notification", (data) => {
+      console.log("🔔 Notification received:", data);
+   
+    });
 
     socketRef.current.on('disconnect', () => {
       console.log('❌ Disconnected from WebSocket');

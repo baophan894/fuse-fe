@@ -66,9 +66,19 @@ export const userAPI = baseApi.injectEndpoints({
       }),
     }),
     
+    createSubAdmin: build.mutation({
+      query: ({adminId, data}) => (
+       
+        {
+        url: endpointAdmin.CREATE_SUB_ADMIN.replace(':id', adminId),
+        method: "POST",
+        body: data,
+      }),
+    }),
+
 
   }),
 })
 
-export const { useGetAllUsersQuery, useAssignInsuranceMutation, useGetAllSubAdminQuery, useGetFormByAdminIdQuery } = userAPI
+export const { useGetAllUsersQuery, useAssignInsuranceMutation, useGetAllSubAdminQuery, useGetFormByAdminIdQuery, useCreateSubAdminMutation } = userAPI
 
